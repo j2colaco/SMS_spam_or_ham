@@ -50,8 +50,15 @@ if __name__ == '__main__':
     # print(df)
     df['stemmed_sms'] = df.loc[:,'sms'].apply(lambda x: stem_str(str(x)))
     # print(df)
-    # df.to_csv(filepath + '_test3.csv', index=False)
+    df.to_csv(filepath + '_result.csv', index=False)
 
     spam_df = df[df['class'] == 'spam']
     # print(spam_df)
     word_freq = word_freq(spam_df)
+    word_freq_lst = []
+    for key, value in word_freq.items():
+        temp = [key, value]
+        word_freq_lst.append(temp)
+    word_freq_df = pd.DataFrame(word_freq_lst)
+    word_freq_df.to_csv(filepath + '_freq.csv', index=False)
+
