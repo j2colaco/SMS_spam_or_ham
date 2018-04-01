@@ -1,0 +1,139 @@
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+import re
+import unidecode
+import nltk
+from nltk.stem import PorterStemmer
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+
+ps = PorterStemmer()
+stop_words = set(stopwords.words('english'))
+
+
+# Stems words to their root words and removes all characters that are not alphabets
+def stem_str(str):
+    ret_str = ""
+    for w in word_tokenize(str.lower()):
+        if w not in stop_words and w.isalpha():
+            ret_str = ret_str + " " + ps.stem(w)
+    return ret_str.strip()
+
+# Gets the count of most frequent words give a dataframe
+def word_freq(df):
+    word_frequency = {}
+    for index,row in df.iterrows():
+        for w in word_tokenize(row['stemmed_sms']):
+            if w not in word_frequency:
+                word_frequency[w] = 1
+            else:
+                word_frequency[w] += 1
+    return word_frequency
+
+
+#TRAIN - outter, runs once on training data
+def train(trainData):
+    global pA
+    global pNotA
+    total = 0
+    numSpam = 0
+    #for row in trainData.rows:
+    for index, row in trainData.iterrows():
+        #print(row['category'])
+        if row['category'] == 'spam':
+            numSpam += 1
+            #print(numSpam)
+        total += 1
+        processText(row['stemmed_sms'], row['category'])
+    pA = numSpam/float(total)
+    pNotA = (float(total) - float(numSpam))/float(total)
+
+#TRAIN - inner 1, counts the words in a specific text
+def processText(body, label):
+    global negativeTotal
+    global positiveTotal
+    global numWords
+    #for word in body:
+    for word in word_tokenize(body):
+        if label == 'spam':
+            #print('spam - in')
+            trainPositive[word] = trainPositive.get(word, 0) + 1
+            positiveTotal = positiveTotal + 1
+        else:
+            trainNegative[word] = trainNegative.get(word, 0) + 1
+            negativeTotal = negativeTotal + 1
+    #print(negativeTotal)
+    #print(positiveTotal)
+
+#gives the conditional probability p(B_i | A_x)
+def conditionalWord_noSmoothing(word, spam):
+    #print('in conditional word')
+    if spam:
+        return trainPositive[word]/float(positiveTotal)
+    return trainNegative[word]/float(negativeTotal)
+
+#gives the conditional probability p(B_i | A_x) with smoothing (alpha = 1.0 for Laplace)
+def conditionalWord(word, spam, numWords):
+    alpha = 1.0 
+    if spam:
+        return (trainPositive.get(word,0)+alpha)/float(positiveTotal+alpha*numWords)
+    return (trainNegative.get(word,0)+alpha)/float(negativeTotal+alpha*numWords)
+
+
+#gives the conditional probability p(B | A_x)
+def conditionalText(body, spam, numWords):
+    result = 1.0
+    for word in word_tokenize(body):
+        result *= conditionalWord(word, spam, numWords)
+    return result
+
+#classifies a new text as spam or not spam
+def classify(text,numWords):
+    isSpam = pA * conditionalText(text, True, numWords) # P (A | B)
+    notSpam = pNotA * conditionalText(text, False, numWords) # P(¬A | B)
+    return isSpam > notSpam
+
+    
+#reading in the data and renaming columns    
+data = pd.read_csv('./spam.csv',encoding = "ISO-8859-1")
+data.columns = ['category', 'text']
+
+#stem data
+data['stemmed_sms'] = data.loc[:,'text'].apply(lambda x: stem_str(str(x)))
+#print(data)
+
+#split data into training and test data
+#trainData, test = train_test_split(data, train_size=0.20)
+trainData, test = train_test_split(data, test_size=0.80)
+
+unique_words = word_freq(data)
+
+#variable initialization
+negativeTotal = 0
+positiveTotal = 0
+trainNegative = {}
+trainPositive = {}
+pA = float(0)
+pNotA = float(0)
+resultsCorrect = 0
+totalResults = 0
+
+#call train function to train model
+train(trainData)
+
+# if result (from classify function) is TRUE means SPAM, if result is FALSE means HAM
+for index, row in test.iterrows():
+    result = classify(row['stemmed_sms'],len(unique_words))
+    strResult = str(result)
+    strCategory = str(row['category'])
+    toPrint = "{} {} ".format(strResult, strCategory) 
+    #print(toPrint)
+    if (result and strCategory == 'spam') or (result == False and strCategory == 'ham'):
+        resultsCorrect += 1
+    totalResults += 1
+        
+print(resultsCorrect)
+print(totalResults)
+print(resultsCorrect/totalResults)
+print("done!")
