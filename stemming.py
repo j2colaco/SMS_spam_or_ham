@@ -3,17 +3,10 @@ import csv
 from nltk.stem import PorterStemmer
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
+import re
 
 ps = PorterStemmer()
 stop_words = set(stopwords.words('english'))
-
-# # Stems words to their root words and removes all characters that are not alpha-numeric
-# def stem_str(str):
-#     ret_str = ""
-#     for w in word_tokenize(str):
-#         if w not in stop_words and w.isalnum():
-#             ret_str = ret_str + " " + ps.stem(w)
-#     return ret_str.strip()
 
 # Stems words to their root words and removes all characters that are not alphabets
 def stem_str(str):
@@ -21,6 +14,7 @@ def stem_str(str):
     for w in word_tokenize(str.lower()):
         if w not in stop_words and w.isalpha() and len(w) > 1:
             ret_str = ret_str + " " + ps.stem(w)
+    ret_str = re.sub("[^a-zA-Z]", " ", ret_str)
     return ret_str.strip()
 
 # Gets the count of most frequent words give a dataframe
@@ -59,10 +53,12 @@ if __name__ == '__main__':
     df['stemmed_sms'] = df.loc[:,'sms'].apply(lambda x: stem_str(str(x)))
 
     #Adding a length column to the dataframe
-    df['len'] = df.loc[:,'sms'].apply(lambda x: len(x))
+    df['len_original_test'] = df.loc[:,'sms'].apply(lambda x: len(x))
+    df['len_clean_text'] = df.loc[:,'stemmed_sms'].apply(lambda x: len(x))
 
     # Printing out the stemmed words to csv
     df.to_csv(filepath + '_result.csv', index=False)
+
 
     # Everything from here on out is EDA
     #getting the most frequent spam unique words
@@ -93,6 +89,7 @@ if __name__ == '__main__':
 
     print("Top 10 most occuring unique words are in the whole dataset are:")
     print(word_freq[0:9])
+    print("The total number of unique words are", len(word_freq))
 
     # Getting the data class labels and their counts
     count_spam =df[df['class'] == 'spam']['class'].count()
