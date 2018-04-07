@@ -35,8 +35,9 @@ if __name__ == '__main__':
     # sms_pd.to_csv('check.csv')
 
 
-    features = [100,200,300,400,500,600,700,800,900,1000, 1500, 2000, 2500, 3000,3500,4000,4500,5000]
-    features = [1000]
+    # features = [100,200,300,400,500,600,700,800,900,1000, 1500, 2000, 2500, 3000,3500,4000,4500,5000]
+    features = [1400]
+    # features = [1000]
     # features = [2500, 3000,3500,4000,4500,5000]
     pre_score = []
     acc_score = []
@@ -52,20 +53,19 @@ if __name__ == '__main__':
         print(type(x_tfidf), x_tfidf.shape, classification.shape)
 
         # split into train and test
-        X_train, X_test, y_train, y_test = train_test_split(x_tfidf, classification, test_size=0.30, random_state=13)
+        X_train, X_test, y_train, y_test = train_test_split(x_tfidf, classification, test_size=0.30, random_state=7)
 
         kfold = StratifiedKFold(n_splits=2, shuffle=True, random_state=42)
         count = 1
         for train, validate in kfold.split(X_train, y_train):
             print('This is', count, 'fold!')
             model = Sequential()
-            model.add(Dense(32, input_shape=(max_features,)))
-            model.add(Dropout(0.2))
+            model.add(Dense(60, input_shape=(max_features,)))
             model.add(Activation('relu'))
-            model.add(Dense(64))
-            model.add(Dropout(0.2))
+            model.add(Dense(5))
             model.add(Activation('relu'))
             model.add(Dense(1))
+            model.add(Dropout(0.16))
             model.add(Activation('sigmoid'))
             model.summary()
             model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['acc'])
@@ -89,7 +89,7 @@ if __name__ == '__main__':
         scores.append([i, (sum(acc_score)/len(acc_score)), (sum(pre_score)/len(pre_score))])
     print(scores)
     scores_pd = pd.DataFrame(scores, columns=['Max Features', 'Test Accuracy', 'Test Precision'])
-    scores_pd.to_csv('Pick Max Features NN_v2.csv', index=False)
+    scores_pd.to_csv('Pick Max Features NN_v2ADD.csv', index=False)
     print('Added to file')
 
     import winsound

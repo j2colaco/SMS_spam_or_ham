@@ -32,40 +32,41 @@ if __name__ == '__main__':
     sms = sms[1:]
     print(len(sms_stemmed), len(classification))
 
-    dropout = np.arange(0, 0.52, 0.02)
-    print(dropout)
-    # dropout = [0.01]
+    epoch = [10,20,30,40,50,100,200]
+    # epoch = [10,20,30,40,50,100,200]
+    # epoch = [300,400,500,1000,1500,2000]
     pre_score = []
     acc_score = []
     scores = []
 
     from sklearn.feature_extraction.text import TfidfVectorizer
 
-    max_features = 1000
+    max_features = 1400
     tfidf = TfidfVectorizer(max_features=max_features)
     x_tfidf = tfidf.fit_transform(sms_stemmed).toarray()
     classification = np.asarray(classification)
     print(type(x_tfidf), x_tfidf.shape, classification.shape)  # 5572 doc, tfidf 100 dimension
 
     # split into train and test
-    X_train, X_test, y_train, y_test = train_test_split(x_tfidf, classification, test_size=0.30, random_state=13)
+    X_train, X_test, y_train, y_test = train_test_split(x_tfidf, classification, test_size=0.30, random_state=42)
 
     kfold = StratifiedKFold(n_splits=2, shuffle=True, random_state=42)
 
-    for i in dropout:
+    for i in epoch:
         count = 1
         for train, validate in kfold.split(X_train, y_train):
             print('This is', count, 'fold!')
             model = Sequential()
-            model.add(Dense(70, input_shape=(max_features,)))
-            model.add(Dropout(i))
+            model.add(Dense(60, input_shape=(max_features,)))
+            model.add(Activation('relu'))
+            model.add(Dense(5))
             model.add(Activation('relu'))
             model.add(Dense(1))
             model.add(Dropout(0.16))
             model.add(Activation('sigmoid'))
             model.summary()
             model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['acc'])
-            model.fit(X_train[train], y_train[train], batch_size=64, epochs=10, verbose=1)
+            model.fit(X_train[train], y_train[train], batch_size=64, epochs=i, verbose=1)
 
             test_pred = model.predict(X_train[validate])
             # print(test_pred)
@@ -84,8 +85,9 @@ if __name__ == '__main__':
 
 
     print(scores)
-    scores_pd = pd.DataFrame(scores, columns=['dropout (first layer)', 'Test Accuracy', 'Test Precision'])
-    scores_pd.to_csv('Pick Dropout first(output 0.16) NN_v2.csv', index=False)
+    scores_pd = pd.DataFrame(scores, columns=['epoch #', 'Test Accuracy', 'Test Precision'])
+    scores_pd.to_csv('Pick Epoch NN_v2.csv', index=False)
+    print('Added to file')
 
     import winsound
 
