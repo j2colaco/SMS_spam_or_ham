@@ -12,7 +12,6 @@ from sklearn.model_selection import cross_val_score
 import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.metrics import confusion_matrix
-import time
 
 if __name__ == '__main__':
     #Reading in the file via csv library
@@ -45,40 +44,51 @@ if __name__ == '__main__':
     scores = []
     # Changing to tfidf representation
     from sklearn.feature_extraction.text import TfidfVectorizer
-    max_features = 5824
-    tfidf = TfidfVectorizer(max_features=max_features)
-    x_tfidf = tfidf.fit_transform(sms_stemmed).toarray()
+    # max_features = 5824
+    # tfidf = TfidfVectorizer(max_features=max_features)
+    # x_tfidf = tfidf.fit_transform(sms_stemmed).toarray()
+    # Changing to tfidf representation
+    # x_tfidf = tfidf.fit_transform(sms_stemmed)
+    tfidf = TfidfTransformer()
+    x_tfidf = tfidf.fit_transform(x_bow)
     classification = np.asarray(classification)
 
     # split into train and test
-    X_train, X_test, y_train, y_test = train_test_split(x_tfidf, classification, test_size=0.30, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(x_tfidf, classification, test_size=0.30, random_state=20)
 
-    print('The shape of the training and testing sets are:',X_train.shape, X_test.shape)
+    print('The shape of the training and testing sets are:', X_train.shape, X_test.shape)
 
     # empty list that will hold cv scores
-    cv_acc_scores = []
-    cv_prec_scores = []
-    # perform 10-fold cross validation
-    knn = KNeighborsClassifier(n_neighbors=1)
-    acc_scores = cross_val_score(knn, X_train, y_train, cv=10, scoring='accuracy')
-    prec_scores = cross_val_score(knn, X_train, y_train, cv=10, scoring='precision')
-    scores.append([5824, round(acc_scores.mean(), 6), round(prec_scores.mean(), 6)])
+    k_list = [1,3,5,7,9,11,13,15,17,19]
+    for k in k_list:
+        # perform 10-fold cross validation
+        knn = KNeighborsClassifier(n_neighbors=k)
+        acc_scores = cross_val_score(knn, X_train, y_train, cv=10, scoring='accuracy')
+        prec_scores = cross_val_score(knn, X_train, y_train, cv=10, scoring='precision')
+        scores.append([k, round(acc_scores.mean(), 6), round(prec_scores.mean(), 6)])
+        knn = KNeighborsClassifier(n_neighbors=k)
+        knn.fit(X_train, y_train)
+        prediction = knn.predict(X_test)
+        cm = confusion_matrix(y_test, prediction)
+        print(cm)
+        precision = precision_score(y_test, prediction)
+        accuracy = accuracy_score(y_test, prediction)
+
 
     print(scores)
+    scores_df = pd.DataFrame(scores, columns=['k', 'Model Accuracy', 'Model Precision'])
+    scores_df.to_csv('knn Picking k all features.csv', index=False)
 
-    t1 = time.time()
     # initiating, fitting and predicting the knn model
     knn = KNeighborsClassifier(n_neighbors=1)
     knn.fit(X_train, y_train)
     prediction = knn.predict(X_test)
-    t2 = time.time()
-
-    print((t2-t1)/60)
 
     print('Accuracy of the model is', accuracy_score(y_test, prediction))
     print('Precision of the model is', precision_score(y_test, prediction))
     cm = confusion_matrix(y_test, prediction)
     print(cm)
+
     import winsound
 
     frequency = 2500  # Set Frequency To 2500 Hertz

@@ -98,3 +98,4 @@ if __name__ == '__main__':
     count_ham =df[df['class'] == 'ham']['class'].count()
     print()
     print('Count of ham class is',count_ham)
+

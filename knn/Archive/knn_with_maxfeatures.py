@@ -46,7 +46,7 @@ if __name__ == '__main__':
     print('Shape of x_bow is', x_bow.shape)
     x_bow = x_bow.toarray()
 
-    features = [250, 275, 325, 350]
+    features = [100,200,300,400,500,1000,1500,2000,2500,3000,3500,4000,4500, 5000, 5500]
     scores = []
     for i in features:
         # Changing to tfidf representation
@@ -57,7 +57,7 @@ if __name__ == '__main__':
         classification = np.asarray(classification)
 
         # split into train and test
-        X_train, X_test, y_train, y_test = train_test_split(x_tfidf, classification, test_size=0.30, random_state=42)
+        X_train, X_test, y_train, y_test = train_test_split(x_tfidf, classification, test_size=0.30, random_state=20)
 
         print('The shape of the training and testing sets are:',X_train.shape, X_test.shape)
 
@@ -71,7 +71,7 @@ if __name__ == '__main__':
         scores.append([i, round(acc_scores.mean(), 6), round(prec_scores.mean(), 6)])
 
     scores_df = pd.DataFrame(scores, columns= ['Max Features', 'Accuracy', 'Precision'])
-    scores_df.to_csv('knn max features_v2.csv')
+    scores_df.to_csv('knn max features again_v2.csv')
 
     # # initiating, fitting and predicting the knn model
     # knn = KNeighborsClassifier(n_neighbors=optimal_k)

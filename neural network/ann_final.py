@@ -12,6 +12,9 @@ import pandas as pd
 from sklearn.metrics import confusion_matrix
 import winsound
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import precision_score
+import time
 
 if __name__ == '__main__':
     #Reading in the file via csv library
@@ -37,7 +40,7 @@ if __name__ == '__main__':
     print(len(sms_stemmed), len(classification))
     # sms_pd = pd.DataFrame(sms_stemmed)
     # sms_pd.to_csv('check.csv')
-    random_state = 20
+    random_state = 2
     pre_score = []
     acc_score = []
     scores = []
@@ -46,7 +49,7 @@ if __name__ == '__main__':
 
     X_tr, X_te, y_tr, y_te = train_test_split(sms_stemmed, classification, test_size=0.30, random_state=random_state)
 
-    max_features = 1400
+    max_features = 1500
     tfidf = TfidfVectorizer(max_features=max_features)
     x_tfidf = tfidf.fit_transform(sms_stemmed).toarray()
     classification = np.asarray(classification)
@@ -65,8 +68,10 @@ if __name__ == '__main__':
         model = Sequential()
         model.add(Dense(60, input_shape=(max_features,)))
         model.add(Activation('relu'))
+        # model.add(Dropout(0.2))
         model.add(Dense(5))
         model.add(Activation('relu'))
+        # model.add(Dropout(0.2))
         model.add(Dense(1))
         model.add(Activation('sigmoid'))
         model.summary()
@@ -88,13 +93,17 @@ if __name__ == '__main__':
 
     print('Model accuracy is', round(sum(acc_score) / len(acc_score),3))
     print('Model precision is', round(sum(pre_score) / len(pre_score),3))
-
+    t1 = time.time()
     test_pred = model.predict(X_test)
     predicted_classes = np.around(test_pred, decimals=0)
+    t2 = time.time()
+    print(t2 - t1)
     cm = confusion_matrix(y_test, predicted_classes)
     print(cm)
-    accuracy = (cm[0, 0] + cm[1, 1]) / X_test.shape[0]
-    precision = cm[0, 0] / (cm[0, 0] + cm[1, 0])
+    # accuracy = (cm[0, 0] + cm[1, 1]) / X_test.shape[0]
+    accuracy = accuracy_score(y_test, predicted_classes)
+    # precision = cm[0, 0] / (cm[0, 0] + cm[1, 0])
+    precision = precision_score(y_test, predicted_classes)
     print('Test accuracy is', accuracy)
     print('Test precision is', precision)
 
@@ -107,5 +116,5 @@ if __name__ == '__main__':
     test_output_df.to_csv('output.csv', index=False)
 
     frequency = 2500  # Set Frequency To 2500 Hertz
-    duration = 1000  # Set Duration To 1000 ms == 1 second
+    duration = 500  # Set Duration To 1000 ms == 1 second
     winsound.Beep(frequency, duration)
